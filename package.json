@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/tjschiffer/multi-language-site-generator#readme",
   "dependencies": {
+    "async": "^2.6.0",
     "mustache": "^2.3.0"
   }
 }
