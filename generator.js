@@ -18,26 +18,26 @@ const path = require('path');
     fs.readFile(templateDataPath,
       'utf8',
       (err, data) => {
-        if (err) throw err;
         const templateData = JSON.parse(data);
-        cb(null, templateData);
+        cb(err, templateData);
       });
   }
 
   function readTemplateDir(templateDirPath, cb) {
     fs.readdir(templateDirPath, (err, files) => {
-      if (err) throw err;
+      if (err) {
+        cb(err);
+      }
       const mustacheTemplates = files.filter(file => path.extname(file) === '.mustache');
       async.reduce(mustacheTemplates, {}, (acc, mustacheTemplate, cb1) => {
         fs.readFile(path.join(templateDirPath, mustacheTemplate),
           'utf8',
           (err, data) => {
-            if (err) throw err;
             acc[mustacheTemplate] = data;
-            cb1(null, acc);
+            cb1(err, acc);
           });
       }, (err, templateData) => {
-        cb(null, templateData);
+        cb(err, templateData);
       });
     });
   }
@@ -48,8 +48,7 @@ const path = require('path');
         cb();
       } else {
         fs.mkdir(dir, (err) => {
-          if (err) throw err;
-          cb();
+          cb(err);
         });
       }
     });
@@ -59,12 +58,11 @@ const path = require('path');
     async.each(dirs, (dir, cb) => {
       createDir(dir, cb)
     }, (err) => {
-      if (err) throw err;
-      cb();
+      cb(err);
     });
   }
 
-  function renderLanguage(language, templates, templateData, saveFolder) {
+  function renderLanguage(language, templates, templateData, saveFolder, cb) {
     for (const template in templates) {
       if (!templates.hasOwnProperty(template)) {
         continue;
@@ -72,12 +70,12 @@ const path = require('path');
       templateData['language'] = language;
       const renderedTemplate = mustache.render(templates[template], templateData);
       fs.writeFile(path.join(saveFolder, path.parse(template).name + '.html'), renderedTemplate, err => {
-        if (err) throw err;
+        cb(err);
       });
     }
   }
 
-  function renderTemplates(templateData, templates, outputFolder) {
+  function renderTemplates(templateData, templates, outputFolder, cb) {
     const languages = Object.keys(templateData);
     const foldersByLanguages = languages.reduce((acc, key) => {
       acc[key] = path.join(outputFolder, key);
@@ -92,16 +90,16 @@ const path = require('path');
         createDirs(Object.values(foldersByLanguages), cb);
       }
     ], (err) => {
-      if (err) throw err;
       languages.forEach(language => {
         renderLanguage(language, templates, templateData[language], foldersByLanguages[language]);
       });
+      cb(err);
     });
   }
 
   generator.version = '0.9.0';
 
-  generator.render = function render(templateDirPath, templateDataPath, outputFolder) {
+  generator.render = function render(templateDirPath, templateDataPath, outputFolder, cb) {
     async.parallel({
       templateData: cb => {
         readTemplateData(templateDataPath, cb);
@@ -110,8 +108,7 @@ const path = require('path');
         readTemplateDir(templateDirPath, cb);
       }
     }, (err, data) => {
-      if (err) throw err;
-      renderTemplates(data.templateData, data.templates, outputFolder);
+      renderTemplates(data.templateData, data.templates, outputFolder, cb);
     });
   }
 }));
