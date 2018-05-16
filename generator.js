@@ -83,16 +83,20 @@ const path = require('path');
     }, {});
 
     async.series([
-      (cb) => {
+      cb => {
         createDir(outputFolder, cb);
       },
-      (cb) => {
+      cb => {
         createDirs(Object.values(foldersByLanguages), cb);
+      },
+      cb => {
+        async.each(languages, (language, cb1) => {
+          renderLanguage(language, templates, templateData[language], foldersByLanguages[language], cb1);
+        }, err => {
+          cb(err);
+        });
       }
     ], (err) => {
-      languages.forEach(language => {
-        renderLanguage(language, templates, templateData[language], foldersByLanguages[language]);
-      });
       cb(err);
     });
   }
