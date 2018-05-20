@@ -93,7 +93,7 @@ const path = require('path');
    * @param cb
    */
   function renderLanguage(language, templates, templateData, saveFolder, cb) {
-    async.forEachOf(templates, (template, templateName, cb1) => {
+    async.eachOf(templates, (template, templateName, cb1) => {
       templateData['language'] = language;
       const renderedTemplate = mustache.render(template, templateData);
       fs.writeFile(path.join(saveFolder, path.parse(templateName).name + '.html'), renderedTemplate, err => {
