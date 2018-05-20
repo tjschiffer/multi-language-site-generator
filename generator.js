@@ -14,6 +14,11 @@ const path = require('path');
   }
 }(this, function generatorFactory (generator) {
 
+  /**
+   *
+   * @param templateDataPath
+   * @param cb
+   */
   function readTemplateData(templateDataPath, cb) {
     fs.readFile(templateDataPath,
       'utf8',
@@ -23,6 +28,11 @@ const path = require('path');
       });
   }
 
+  /**
+   *
+   * @param templateDirPath
+   * @param cb
+   */
   function readTemplateDir(templateDirPath, cb) {
     fs.readdir(templateDirPath, (err, files) => {
       if (err) {
@@ -42,6 +52,12 @@ const path = require('path');
     });
   }
 
+  /**
+   * Create the directory if it does not exist
+   *
+   * @param dir
+   * @param cb
+   */
   function createDir(dir, cb) {
     fs.stat(dir, (err, stats) => {
       if (stats) {
@@ -54,6 +70,11 @@ const path = require('path');
     });
   }
 
+  /**
+   *
+   * @param dirs
+   * @param cb
+   */
   function createDirs(dirs, cb) {
     async.each(dirs, (dir, cb) => {
       createDir(dir, cb)
@@ -62,19 +83,34 @@ const path = require('path');
     });
   }
 
+  /**
+   *  Render each template in the language provided
+   *
+   * @param language
+   * @param templates
+   * @param templateData
+   * @param saveFolder
+   * @param cb
+   */
   function renderLanguage(language, templates, templateData, saveFolder, cb) {
-    for (const template in templates) {
-      if (!templates.hasOwnProperty(template)) {
-        continue;
-      }
+    async.forEachOf(templates, (template, templateName, cb1) => {
       templateData['language'] = language;
-      const renderedTemplate = mustache.render(templates[template], templateData);
-      fs.writeFile(path.join(saveFolder, path.parse(template).name + '.html'), renderedTemplate, err => {
-        cb(err);
+      const renderedTemplate = mustache.render(template, templateData);
+      fs.writeFile(path.join(saveFolder, path.parse(templateName).name + '.html'), renderedTemplate, err => {
+        cb1(err);
       });
-    }
+    }, err => {
+      cb(err);
+    });
   }
 
+  /**
+   *
+   * @param templateData
+   * @param templates
+   * @param outputFolder
+   * @param cb
+   */
   function renderTemplates(templateData, templates, outputFolder, cb) {
     const languages = Object.keys(templateData);
     const foldersByLanguages = languages.reduce((acc, key) => {
@@ -101,8 +137,19 @@ const path = require('path');
     });
   }
 
+  /**
+   *
+   * @type {string}
+   */
   generator.version = '0.9.0';
 
+  /**
+   *
+   * @param templateDirPath
+   * @param templateDataPath
+   * @param outputFolder
+   * @param cb
+   */
   generator.render = function render(templateDirPath, templateDataPath, outputFolder, cb) {
     async.parallel({
       templateData: cb => {
